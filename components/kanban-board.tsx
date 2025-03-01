@@ -12,7 +12,7 @@ export default function KanbanBoard() {
   const [tasks, setTasks] = useState<Task[]>(mockTasks)
   const [filteredTasks, setFilteredTasks] = useState<Task[]>(mockTasks)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [addModalStatus, setAddModalStatus] = useState<Task["status"]>("Pendente")
+  const [addModalStatus, setAddModalStatus] = useState<Task["status"]>("pending")
   const [filter, setFilter] = useState({ search: "", status: "", priority: "" })
 
   const applyFilters = useCallback((taskList: Task[], currentFilter: typeof filter) => {
@@ -98,9 +98,9 @@ export default function KanbanBoard() {
     applyFilters(newTasks, filter)
   }
 
-  const pendingTasks = getTasksByStatus("Pendente")
-  const inProgressTasks = getTasksByStatus("Em andamento")
-  const completedTasks = getTasksByStatus("Concluída")
+  const pendingTasks = getTasksByStatus("pending")
+  const inProgressTasks = getTasksByStatus("in_progress")
+  const completedTasks = getTasksByStatus("done")
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
@@ -116,7 +116,7 @@ export default function KanbanBoard() {
               onChange={(e) => handleFilterChange({ ...filter, search: e.target.value })}
             />
             <button
-              onClick={() => handleAddTask("Pendente")}
+              onClick={() => handleAddTask("pending")}
               className="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-lg"
             >
               Nova atividade
@@ -125,7 +125,7 @@ export default function KanbanBoard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Droppable droppableId="Pendente">
+          <Droppable droppableId="pending">
             {(provided) => (
               <div
                 {...provided.droppableProps}
@@ -133,8 +133,8 @@ export default function KanbanBoard() {
                 className="bg-card rounded-2xl p-6 min-h-[500px] w-full bg-[#282829]"
               >
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-semibold text-lg">Pendente ({pendingTasks.length})</h2>
-                  <button onClick={() => handleAddTask("Pendente")} className="p-1 rounded-full hover:bg-secondary">
+                  <h2 className="font-semibold text-lg">Pendentes ({pendingTasks.length})</h2>
+                  <button onClick={() => handleAddTask("pending")} className="p-1 rounded-full hover:bg-secondary">
                     <Plus size={20} className="text-primary" />
                   </button>
                 </div>
@@ -159,7 +159,7 @@ export default function KanbanBoard() {
             )}
           </Droppable>
 
-          <Droppable droppableId="Em andamento">
+          <Droppable droppableId="in_progress">
             {(provided) => (
               <div
                 {...provided.droppableProps}
@@ -168,7 +168,7 @@ export default function KanbanBoard() {
               >
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="font-semibold text-lg">Realizando ({inProgressTasks.length})</h2>
-                  <button onClick={() => handleAddTask("Em andamento")} className="p-1 rounded-full hover:bg-secondary">
+                  <button onClick={() => handleAddTask("in_progress")} className="p-1 rounded-full hover:bg-secondary">
                     <Plus size={20} className="text-primary" />
                   </button>
                 </div>
@@ -193,7 +193,7 @@ export default function KanbanBoard() {
             )}
           </Droppable>
 
-          <Droppable droppableId="Concluída">
+          <Droppable droppableId="done">
             {(provided) => (
               <div
                 {...provided.droppableProps}
@@ -201,8 +201,8 @@ export default function KanbanBoard() {
                 className="bg-card rounded-2xl p-6 min-h-[500px] w-full bg-[#282829]"
               >
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-semibold text-lg">Concluída ({completedTasks.length})</h2>
-                  <button onClick={() => handleAddTask("Concluída")} className="p-1 rounded-full hover:bg-secondary">
+                  <h2 className="font-semibold text-lg">Concluídas ({completedTasks.length})</h2>
+                  <button onClick={() => handleAddTask("done")} className="p-1 rounded-full hover:bg-secondary">
                     <Plus size={20} className="text-primary" />
                   </button>
                 </div>

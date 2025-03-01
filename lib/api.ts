@@ -13,8 +13,8 @@ export interface Task {
   id: string
   title: string
   description: string
-  status: "Pendente" | "Em andamento" | "Concluída"
-  priority?: "Baixa" | "Média" | "Alta"
+  status: "pending" | "in_progress" | "done"
+  priority?: "low" | "medium" | "high"
   createdAt: string
   updatedAt: string
 }

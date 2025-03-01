@@ -27,16 +27,27 @@ export function getStatusColor(status: string): string {
   }
 }
 
-export function getPriorityColor(priority?: string): string {
+export function getPriorityColor(priority) {
   switch (priority) {
-    case "Alta":
-      return "bg-red-100 text-red-800"
-    case "Média":
-      return "bg-yellow-100 text-yellow-800"
-    case "Baixa":
-      return "bg-blue-100 text-blue-800"
+    case 'Baixa':
+      return 'success';
+    case 'Média':
+      return 'warning';
+    case 'Alta':
+      return 'danger';
     default:
-      return "bg-gray-100 text-gray-800"
+      return '';
   }
 }
 
+export const mappedStatus = {
+  'pending': 'Pendente',
+  'in_progress': 'Em andamento',
+  'done': 'Concluída'
+}
+
+export const mappedPriority = {
+  'low': 'Baixa',
+  'medium': 'Média',
+  'high': 'Alta'
+}

@@ -54,13 +54,13 @@ export default function TaskCard({ task, onTaskUpdated, onTaskDeleted, className
 
             <div className="flex justify-between items-center">
               <div className="flex space-x-2">
-                {task.priority === "High" && (
+                {task.priority === "high" && (
                   <span className="text-danger text-xs px-2 py-1 rounded-full bg-danger/20">Alta</span>
                 )}
-                {task.priority === "Medium" && (
+                {task.priority === "medium" && (
                   <span className="text-warning text-xs px-2 py-1 rounded-full bg-warning/20">Média</span>
                 )}
-                {task.priority === "Low" && (
+                {task.priority === "low" && (
                   <span className="text-success text-xs px-2 py-1 rounded-full bg-success/20">Baixa</span>
                 )}
               </div>
