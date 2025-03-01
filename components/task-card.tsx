@@ -22,7 +22,7 @@ export default function TaskCard({ task, onTaskUpdated, onTaskDeleted, className
 
   return (
     <>
-      <div className={cn("task-card group", className)}>
+      <div className={cn("task-card group", className)} onClick={() => setShowDetails(true)}>
         <div className="flex items-center">
           <GripVertical size={20} className="mr-2 text-gray-400 opacity-0 group-hover:opacity-100 cursor-grab" />
           <div className="flex-grow">
