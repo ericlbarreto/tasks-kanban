@@ -9,7 +9,7 @@ import { X } from "lucide-react"
 interface EditTaskModalProps {
   task: Task
   onClose: () => void
-  onTaskUpdated: () => void
+  onTaskUpdated: (updatedTask: Task) => void
 }
 
 export default function EditTaskModal({ task, onClose, onTaskUpdated }: EditTaskModalProps) {
@@ -30,13 +30,21 @@ export default function EditTaskModal({ task, onClose, onTaskUpdated }: EditTask
 
     try {
       setIsSubmitting(true)
-      await taskService.updateTask(task.id, {
+      const mountedTask = {
         title,
         description,
         status,
         priority,
-      })
-      onTaskUpdated()
+      };
+
+      await taskService.updateTask(task.id, mountedTask)
+
+      console.log({ ...task, ...mountedTask }, '{ ...task, ...mountedTask }')
+      onTaskUpdated({
+        ...task,
+        ...mountedTask,
+        updatedAt: new Date().toISOString(),
+      });
       onClose()
     } catch (error) {
       console.error("Error updating task:", error)
@@ -96,9 +104,9 @@ export default function EditTaskModal({ task, onClose, onTaskUpdated }: EditTask
                 onChange={(e) => setStatus(e.target.value as Task["status"])}
                 className="w-full p-2 border text-black border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="Pendente">Pendente</option>
-                <option value="Em andamento">Em andamento</option>
-                <option value="Concluída">Concluída</option>
+                <option value="pending">Pendente</option>
+                <option value="in_progress">Em andamento</option>
+                <option value="done">Concluída</option>
               </select>
             </div>
 
@@ -112,9 +120,9 @@ export default function EditTaskModal({ task, onClose, onTaskUpdated }: EditTask
                 onChange={(e) => setPriority(e.target.value as Task["priority"])}
                 className="w-full p-2 border text-black border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="Baixa">Baixa</option>
-                <option value="Média">Média</option>
-                <option value="Alta">Alta</option>
+                <option value="low">Baixa</option>
+                <option value="medium">Média</option>
+                <option value="high">Alta</option>
               </select>
             </div>
           </div>

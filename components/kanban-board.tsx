@@ -1,19 +1,38 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import type { Task } from "@/lib/api"
-import { mockTasks } from "@/lib/mock-data"
+import { taskService } from "@/lib/api"
 import TaskCard from "./task-card"
 import AddTaskModal from "./add-task-modal"
-import { Plus } from "lucide-react"
-import { DragDropContext, Droppable, Draggable, type DropResult } from "react-beautiful-dnd"
+import { Plus, ChevronDown } from "lucide-react"
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 
 export default function KanbanBoard() {
-  const [tasks, setTasks] = useState<Task[]>(mockTasks)
-  const [filteredTasks, setFilteredTasks] = useState<Task[]>(mockTasks)
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [addModalStatus, setAddModalStatus] = useState<Task["status"]>("pending")
   const [filter, setFilter] = useState({ search: "", status: "", priority: "" })
+  const [isLoading, setIsLoading] = useState(true)
+
+  const fetchTasks = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const fetchedTasks = await taskService.getAllTasks()
+      console.log(fetchedTasks, 'fetchedTasks')
+      setTasks(fetchedTasks)
+      applyFilters(fetchedTasks, filter)
+    } catch (error) {
+      console.error("Failed to fetch tasks:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [filter])
+
+  useEffect(() => {
+    fetchTasks()
+  }, [fetchTasks])
 
   const applyFilters = useCallback((taskList: Task[], currentFilter: typeof filter) => {
     let filtered = [...taskList]
@@ -37,9 +56,13 @@ export default function KanbanBoard() {
     setFilteredTasks(filtered)
   }, [])
 
+  useEffect(() => {
+    applyFilters(tasks, filter)
+  }, [tasks, filter, applyFilters])
+
   const handleFilterChange = (newFilter: typeof filter) => {
     setFilter(newFilter)
-    applyFilters(tasks, newFilter)
+    fetchTasks() // Atualiza os dados ao mudar os filtros
   }
 
   const handleAddTask = (status: Task["status"]) => {
@@ -47,60 +70,57 @@ export default function KanbanBoard() {
     setShowAddModal(true)
   }
 
-  const handleTaskUpdate = (updatedTask: Task) => {
-    const newTasks = tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+  const handleTaskUpdate = async (updatedTask: Task) => {
+    const newTasks = tasks.map(task => task.id === updatedTask.id ? updatedTask : task)
     setTasks(newTasks)
-    applyFilters(newTasks, filter)
   }
 
-  const handleTaskDelete = (taskId: string) => {
-    const newTasks = tasks.filter((task) => task.id !== taskId)
+  const handleTaskDelete = async (taskId: number) => {
+    const newTasks = tasks.filter(task => task.id !== taskId)
     setTasks(newTasks)
-    applyFilters(newTasks, filter)
   }
 
-  const handleTaskAdd = (newTask: Omit<Task, "id" | "createdAt" | "updatedAt">) => {
-    const task: Task = {
-      ...newTask,
-      id: Math.random().toString(36).substr(2, 9),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    const newTasks = [...tasks, task]
-    setTasks(newTasks)
-    applyFilters(newTasks, filter)
+  const handleTaskAdded = () => {
+    fetchTasks()
   }
 
   const getTasksByStatus = (status: Task["status"]) => {
     return filteredTasks.filter((task) => task.status === status)
   }
 
-  const onDragEnd = (result: DropResult) => {
+  const onDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result
 
-    if (!destination) {
+    if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
       return
     }
 
-    if (destination.droppableId === source.droppableId && destination.index === source.index) {
-      return
+    const taskToUpdate = tasks.find((task) => task.id === ~~draggableId)
+    if (!taskToUpdate) return
+
+    try {
+      const updatedTask = await taskService.updateTask(taskToUpdate.id, {
+        title: taskToUpdate.title,
+        description: taskToUpdate.description,
+        priority: taskToUpdate.priority,
+        status: destination.droppableId as Task["status"]
+      })
+
+      const newTasks = tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+
+      setTasks(newTasks)
+    } catch (error) {
+      console.error("Failed to update task status:", error)
     }
-
-    const newTasks = Array.from(tasks)
-    const [reorderedItem] = newTasks.splice(
-      newTasks.findIndex((task) => task.id === draggableId),
-      1,
-    )
-    reorderedItem.status = destination.droppableId as Task["status"]
-    newTasks.splice(destination.index, 0, reorderedItem)
-
-    setTasks(newTasks)
-    applyFilters(newTasks, filter)
   }
 
   const pendingTasks = getTasksByStatus("pending")
   const inProgressTasks = getTasksByStatus("in_progress")
   const completedTasks = getTasksByStatus("done")
+
+  if (isLoading && tasks.length === 0) {
+    return <div className="flex justify-center items-center h-96">Carregando...</div>
+  }
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
@@ -115,6 +135,22 @@ export default function KanbanBoard() {
               value={filter.search}
               onChange={(e) => handleFilterChange({ ...filter, search: e.target.value })}
             />
+
+            {/* Dropdown para Prioridade */}
+            <div className="relative">
+              <select
+                className="px-4 py-2 bg-secondary rounded-lg text-foreground cursor-pointer appearance-none"
+                value={filter.priority}
+                onChange={(e) => handleFilterChange({ ...filter, priority: e.target.value })}
+              >
+                <option value="">Todas as Prioridades</option>
+                <option value="high">Alta</option>
+                <option value="medium">Média</option>
+                <option value="low">Baixa</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-3 text-foreground pointer-events-none" size={16} />
+            </div>
+
             <button
               onClick={() => handleAddTask("pending")}
               className="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-lg"
@@ -125,118 +161,37 @@ export default function KanbanBoard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Droppable droppableId="pending">
-            {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="bg-card rounded-2xl p-6 min-h-[500px] w-full bg-[#282829]"
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-semibold text-lg">Pendentes ({pendingTasks.length})</h2>
-                  <button onClick={() => handleAddTask("pending")} className="p-1 rounded-full hover:bg-secondary">
-                    <Plus size={20} className="text-primary" />
-                  </button>
+          {[
+            { status: "pending", title: "Pendentes", tasks: pendingTasks },
+            { status: "in_progress", title: "Em Progresso", tasks: inProgressTasks },
+            { status: "done", title: "Concluídas", tasks: completedTasks },
+          ].map(({ status, title, tasks }) => (
+            <Droppable key={status} droppableId={status}>
+              {(provided) => (
+                <div ref={provided.innerRef} {...provided.droppableProps} className="bg-card rounded-2xl p-6 min-h-[500px]">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="font-semibold text-lg">{title} ({tasks.length})</h2>
+                  </div>
+                  <div className="space-y-3">
+                    {tasks.map((task, index) => (
+                      <Draggable key={String(task.id)} draggableId={String(task.id)} index={index}>
+                        {(provided) => (
+                          <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                            <TaskCard task={task} onTaskUpdated={handleTaskUpdate} onTaskDeleted={handleTaskDelete} />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {pendingTasks.map((task, index) => (
-                    <Draggable key={task.id} draggableId={task.id} index={index}>
-                      {(provided) => (
-                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                          <TaskCard
-                            task={task}
-                            onTaskUpdated={handleTaskUpdate}
-                            onTaskDeleted={handleTaskDelete}
-                            className="bg-[#E25858]/20 hover:bg-[#E25858]/30"
-                          />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              </div>
-            )}
-          </Droppable>
-
-          <Droppable droppableId="in_progress">
-            {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="bg-card rounded-2xl p-6 min-h-[500px] w-full bg-[#282829]"
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-semibold text-lg">Realizando ({inProgressTasks.length})</h2>
-                  <button onClick={() => handleAddTask("in_progress")} className="p-1 rounded-full hover:bg-secondary">
-                    <Plus size={20} className="text-primary" />
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {inProgressTasks.map((task, index) => (
-                    <Draggable key={task.id} draggableId={task.id} index={index}>
-                      {(provided) => (
-                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                          <TaskCard
-                            task={task}
-                            onTaskUpdated={handleTaskUpdate}
-                            onTaskDeleted={handleTaskDelete}
-                            className="bg-[#7C3AED]/20 hover:bg-[#7C3AED]/30"
-                          />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              </div>
-            )}
-          </Droppable>
-
-          <Droppable droppableId="done">
-            {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="bg-card rounded-2xl p-6 min-h-[500px] w-full bg-[#282829]"
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-semibold text-lg">Concluídas ({completedTasks.length})</h2>
-                  <button onClick={() => handleAddTask("done")} className="p-1 rounded-full hover:bg-secondary">
-                    <Plus size={20} className="text-primary" />
-                  </button>
-                </div>
-                <div className="space-y-3">
-                  {completedTasks.map((task, index) => (
-                    <Draggable key={task.id} draggableId={task.id} index={index}>
-                      {(provided) => (
-                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                          <TaskCard
-                            task={task}
-                            onTaskUpdated={handleTaskUpdate}
-                            onTaskDeleted={handleTaskDelete}
-                            className="bg-[#4EA8DE]/20 hover:bg-[#4EA8DE]/30"
-                          />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              </div>
-            )}
-          </Droppable>
+              )}
+            </Droppable>
+          ))}
         </div>
 
-        {showAddModal && (
-          <AddTaskModal
-            onClose={() => setShowAddModal(false)}
-            onTaskAdded={handleTaskAdd}
-            initialStatus={addModalStatus}
-          />
-        )}
+        {showAddModal && <AddTaskModal onClose={() => setShowAddModal(false)} onTaskAdded={handleTaskAdded} />}
       </div>
     </DragDropContext>
   )
 }
-

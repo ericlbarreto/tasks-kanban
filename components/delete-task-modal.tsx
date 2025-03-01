@@ -5,9 +5,9 @@ import { taskService } from "@/lib/api"
 import { X } from "lucide-react"
 
 interface DeleteTaskModalProps {
-  taskId: string
+  taskId: number
   onClose: () => void
-  onTaskDeleted: () => void
+  onTaskDeleted: (id: number) => void
 }
 
 export default function DeleteTaskModal({ taskId, onClose, onTaskDeleted }: DeleteTaskModalProps) {
@@ -18,7 +18,7 @@ export default function DeleteTaskModal({ taskId, onClose, onTaskDeleted }: Dele
     try {
       setIsDeleting(true)
       await taskService.deleteTask(taskId)
-      onTaskDeleted()
+      onTaskDeleted(taskId)
       onClose()
     } catch (error) {
       console.error("Error deleting task:", error)

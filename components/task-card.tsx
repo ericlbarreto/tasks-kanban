@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 interface TaskCardProps {
   task: Task
   onTaskUpdated: (task: Task) => void
-  onTaskDeleted: (id: string) => void
+  onTaskDeleted: (id: number) => void
   className?: string
 }
 

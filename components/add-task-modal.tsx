@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { type Task, taskService } from "@/lib/api"
-import { X } from "lucide-react"
+import { X } from 'lucide-react'
 
 interface AddTaskModalProps {
   onClose: () => void
@@ -12,11 +12,11 @@ interface AddTaskModalProps {
   initialStatus?: Task["status"]
 }
 
-export default function AddTaskModal({ onClose, onTaskAdded, initialStatus = "Pendente" }: AddTaskModalProps) {
+export default function AddTaskModal({ onClose, onTaskAdded, initialStatus = "pending" }: AddTaskModalProps) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [status, setStatus] = useState<Task["status"]>(initialStatus)
-  const [priority, setPriority] = useState<Task["priority"]>("Média")
+  const [priority, setPriority] = useState<Task["priority"]>("medium")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
@@ -96,9 +96,9 @@ export default function AddTaskModal({ onClose, onTaskAdded, initialStatus = "Pe
                 onChange={(e) => setStatus(e.target.value as Task["status"])}
                 className="w-full p-2 border text-black border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="Pendente">Pendente</option>
-                <option value="Em andamento">Em andamento</option>
-                <option value="Concluída">Concluída</option>
+                <option value="pending">Pendente</option>
+                <option value="in_progress">Em andamento</option>
+                <option value="done">Concluída</option>
               </select>
             </div>
 
@@ -112,9 +112,9 @@ export default function AddTaskModal({ onClose, onTaskAdded, initialStatus = "Pe
                 onChange={(e) => setPriority(e.target.value as Task["priority"])}
                 className="w-full p-2 border text-black border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="Baixa">Baixa</option>
-                <option value="Média">Média</option>
-                <option value="Alta">Alta</option>
+                <option value="low">Baixa</option>
+                <option value="medium">Média</option>
+                <option value="high">Alta</option>
               </select>
             </div>
           </div>
@@ -132,4 +132,3 @@ export default function AddTaskModal({ onClose, onTaskAdded, initialStatus = "Pe
     </div>
   )
 }
-
